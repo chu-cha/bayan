@@ -34,7 +34,7 @@ jobs:
       # run: >
         # sudo apt install libboost-test-dev -y
     - name: Install Boost
-        run: >
+      run: >
             sudo apt install libboost-program-options-dev
             
            
