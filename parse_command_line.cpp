@@ -44,8 +44,8 @@ int parse_command_line(int argc, char* argv[], Settings& settings) {
         ("dir,d", po::value<std::vector<fs::path>>(&settings.included_dirs)->multitoken(), "search in directories")
         ("exdir,x", po::value<std::vector<fs::path>>(&settings.excluded_dirs)->multitoken(), "exclude directories")
         ("level,l", po::value<bool>(&settings.deep_search), "use deep scanning")
-        ("min_size,s", po::value<unsigned long long>(&settings.min_size), "set min file size")
-        ("block_size,b", po::value<unsigned long long>(&settings.block_size), "set block size ")
+        ("min_size,s", po::value<uintmax_t>(&settings.min_size), "set min file size")
+        ("block_size,b", po::value<uintmax_t>(&settings.block_size), "set block size ")
         ("hash_algo,a", po::value<typename Settings::hashing_algorithms>(&settings.algorithm), "set hashing algorithm")
         ;
 
