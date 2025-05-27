@@ -47,12 +47,8 @@ int parse_command_line(int argc, char* argv[], Settings& settings) {
         ("min_size,s", po::value<uintmax_t>(&settings.min_size), "set min file size")
         ("block_size,b", po::value<uintmax_t>(&settings.block_size), "set block size ")
         ("hash_algo,a", po::value<typename Settings::hashing_algorithms>(&settings.algorithm), "set hashing algorithm")
+        ("patterns,p", po::value<std::vector<std::string>>(&settings.allowed_patterns)->multitoken(),"File patterns to compare (*.txt, *.jpg etc)");
         ;
-
-    /*
-         • маски имен файлов разрешенных для сравнения(не зависят от
-             регистра)
-    */
 
     po::variables_map vm;
     try {
@@ -67,44 +63,6 @@ int parse_command_line(int argc, char* argv[], Settings& settings) {
     if (vm.count("help")) {
         std::cout << desc << "\n";
         return 0;
-    }
-
-
-    if (vm.count("dir")) {
-
-        std::cout << "Search directory is: \n";
-
-        for (const auto& d : settings.included_dirs)
-            std::cout << '\t' << d << "\n";
-    }
-
-    if (vm.count("exdir")) {
-
-        std::cout << "Excluded directory is: \n";
-        for (const auto& d : settings.excluded_dirs)
-            std::cout << '\t' << d << "\n";
-    }
-
-    if (vm.count("level")) {
-        std::cout << "Scanning level was set to: "
-            << settings.deep_search << "\n";
-    }
-
-    if (vm.count("min_size")) {
-        std::cout << "Min file size: "
-            << settings.min_size << "\n";
-    }
-
-    if (vm.count("block_size")) {
-        std::cout << "Block size: "
-            << settings.block_size << "\n";
-    }
-
-    std::cout << "Selected algorithm: ";
-    switch (settings.algorithm) {
-    case Settings::hashing_algorithms::crc32: std::cout << "CRC32\n"; break;
-    case Settings::hashing_algorithms::md5:   std::cout << "MD5\n";   break;
-    case Settings::hashing_algorithms::sha1:  std::cout << "SHA1\n";  break;
     }
 
     return 0;

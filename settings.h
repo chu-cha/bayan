@@ -11,7 +11,7 @@ struct Settings {
     std::vector<fs::path> excluded_dirs;
     bool deep_search = false;
     uintmax_t min_size = 1;
-    //std::string mask; //TODO
+    std::vector<std::string> allowed_patterns;
     uintmax_t block_size = 1024;
 
     enum class hashing_algorithms {

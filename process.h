@@ -8,8 +8,9 @@
 
 class FileReader {
 public:
-    FileReader(const fs::path& path)
+    FileReader(const fs::path& path, Settings::hashing_algorithms algorithm)
         : filePath(path),
+        hash_algorithm(algorithm),
         stream(std::make_unique<std::ifstream>(path, std::ios::binary)) {
     }
 
@@ -29,6 +30,7 @@ public:
 private:
     fs::path filePath;
     std::unique_ptr<std::ifstream> stream;
+    Settings::hashing_algorithms hash_algorithm;
 
 };
 
@@ -56,7 +58,10 @@ private:
     void collectFiles(const fs::path& directory,
         const std::vector<fs::path>& excluded_dirs,
         bool recursive = false,
-        uintmax_t min_file_size = 1);
+        uintmax_t min_file_size = 1,
+        const std::vector<std::string>& patterns = {});
+
+    bool matchesPattern(const std::filesystem::path& filepath, const std::vector<std::string>& patterns) const;
 
     std::vector<std::vector<fs::path>> collectGroups(TrieNode* node);
 

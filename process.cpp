@@ -1,21 +1,9 @@
 #include <memory>
-#include <openssl/sha.h>
-#include <sstream>
 #include <cstring>
 #include <algorithm>
 
 #include "process.h"
-
-std::string computeBlockHash(const char* data, size_t size) {
-    unsigned char hash[SHA256_DIGEST_LENGTH];
-    SHA256(reinterpret_cast<const unsigned char*>(data), size, hash);
-
-    std::stringstream ss;
-    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-        ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(hash[i]);
-    }
-    return ss.str();
-}
+#include "block_hash.h"
 
 std::string FileReader::readNextBlock(unsigned long long block_size) const {
     if (!stream || !stream->is_open()) return "";
@@ -31,20 +19,58 @@ std::string FileReader::readNextBlock(unsigned long long block_size) const {
         memset(buffer.data() + bytesRead, 0, block_size - bytesRead);
     }
 
-    return computeBlockHash(buffer.data(), bytesRead);  //TODO
-    //return std::string(buffer.begin(), buffer.end());  //TODO
+    return computeBlockHash(buffer.data(), bytesRead, hash_algorithm);
 }
 
-void CompareFiles::collectFiles(){
-    for (const auto& d: settings.included_dirs)
-        collectFiles(d, settings.excluded_dirs, settings.deep_search, settings.min_size);
+bool CompareFiles::matchesPattern(const std::filesystem::path& filepath,
+    const std::vector<std::string>& patterns) const {
+    if (patterns.empty()) return true; // No masks - allow all
+
+    std::string filename = filepath.filename().string();
+    std::string ext = filepath.extension().string();
+
+    // make all lowercase
+    std::transform(filename.begin(), filename.end(), filename.begin(),
+        [](unsigned char c) { return std::tolower(c); });
+
+    for (const auto& pattern : patterns) {
+        std::string low_pattern = pattern;
+        std::transform(low_pattern.begin(), low_pattern.end(), low_pattern.begin(),
+            [](unsigned char c) { return std::tolower(c); });
+
+        // simple check by extension
+        if (low_pattern.find("*.") == 0) {
+            std::string pattern_ext = low_pattern.substr(1);
+            if (ext.size() >= pattern_ext.size() &&
+                std::equal(pattern_ext.rbegin(), pattern_ext.rend(), ext.rbegin(),
+                    [](char a, char b) { return a == '?' || a == b; })) {
+                return true;
+            }
+        }
+
+        // check full names
+        if (pattern == "*" || pattern == "*.*") return true;
+    }
+
+    return false;
 }
 
+void CompareFiles::collectFiles()
+{
+    for (const auto& d : settings.included_dirs)
+        collectFiles(
+            d,
+            settings.excluded_dirs,
+            settings.deep_search,
+            settings.min_size,
+            settings.allowed_patterns);
+}
 
 void CompareFiles::collectFiles(const fs::path& directory,
     const std::vector<fs::path>& excluded_dirs,
     bool recursive,
-    uintmax_t min_file_size)
+    uintmax_t min_file_size,
+    const std::vector<std::string>& allowed_patterns)
 {
     try {
         for (const auto& entry : fs::directory_iterator(directory)) {
@@ -55,22 +81,19 @@ void CompareFiles::collectFiles(const fs::path& directory,
                     [&entry](const fs::path& excluded) {
                         return excluded == entry.path();
                     }) != excluded_dirs.end()) {
-                   // std::cout << "[SKIPPED] " << entry.path() << "\n";
                     continue;
                 }
 
                 if (recursive)
                     // recursive pass
-                    collectFiles(entry.path(), excluded_dirs, recursive, min_file_size);
+                    collectFiles(entry.path(), excluded_dirs, recursive, min_file_size, allowed_patterns);
             }
             else if (entry.is_regular_file()) {
-                //std::cout << "[FILE] " << entry.path() << "\n";
                 try {
                     const auto file_size = entry.file_size();
-                    if (file_size >= min_file_size) {
-                        file_readers.push_back(entry.path());
+                    if (file_size >= min_file_size && matchesPattern(entry.path(), allowed_patterns)) {
+                        file_readers.push_back(FileReader(entry.path(), settings.algorithm));
                     }
-                    // else файл слишком мал, пропускаем
                 }
                 catch (const fs::filesystem_error& size_err) {
                     std::cerr << "Error getting size for " << entry.path()
@@ -81,14 +104,14 @@ void CompareFiles::collectFiles(const fs::path& directory,
     }
     catch (const fs::filesystem_error& e) {
         std::cerr << "Error accessing " << directory << ": " << e.what() << "\n";
-    } 
+    }
 }
 
 void CompareFiles::groupFilesByBlocks() {
     collectFiles();
 
     TrieNode root;
-    
+
     TrieNode* currentLevel = &root;
     bool allFilesProcessed;
 
@@ -108,12 +131,10 @@ void CompareFiles::groupFilesByBlocks() {
             }
 
             std::string blockHash = reader.readNextBlock(settings.block_size);
-            std::cout << reader.getFilePath() << ": " << blockHash.empty() << " " << blockHash << std::endl;
-             
+
             if (blockHash.empty()) {
                 reader.reset(); // file ended
                 currentLevel->filenames.push_back(reader.getFilePath());
-                std::cout << "File ended and writed to " << currentLevel->blockHash<<"\n";
                 continue;
             }
 
@@ -126,7 +147,6 @@ void CompareFiles::groupFilesByBlocks() {
 
             currentLevel = currentLevel->children[blockHash].get();
             currentLevelHashes[reader_id] = currentLevel;
-            std::cout << reader_id << ": " << currentLevelHashes[reader_id]->blockHash<< std::endl;
 
         }
 
@@ -135,12 +155,10 @@ void CompareFiles::groupFilesByBlocks() {
     auto fileGroups = collectGroups(&root);
 
     for (const auto& group : fileGroups) {
-            std::cout << "Grouped files:\n";
-            for (const auto& file : group) {
-                std::cout << "  " << file << "\n";
-            }
-            std::cout << "\n";
-        
+        for (const auto& file : group) {
+            std::cout << file << "\n";
+        }
+        std::cout << "\n";
     }
 }
 

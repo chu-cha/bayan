@@ -8,12 +8,13 @@ if(WIN32)
 	set(Boost_NO_SYSTEM_PATHS ON)
 
 	set(OPENSSL_ROOT_DIR "C:\\Users\\Tatiana\\vcpkg\\packages\\openssl_x64-windows-static")
-	# set(Boost_USE_STATIC_LIBS ON)
+	#set(Boost_USE_STATIC_LIBS ON)
 
 
 endif()
 
 find_package(Boost REQUIRED COMPONENTS program_options )
+find_package(OpenSSL REQUIRED)
 
 if(Boost_FOUND)
     message(STATUS "Boost found: ${Boost_VERSION}")
@@ -21,13 +22,11 @@ if(Boost_FOUND)
     message(STATUS "Library dirs: ${Boost_LIBRARY_DIRS}")
 else()
     message(FATAL_ERROR "Boost NOT found!")
-    message(STATUS "OpenSSL include dir: ${OPENSSL_INCLUDE_DIR}")
-    message(STATUS "OpenSSL libraries: ${OPENSSL_LIBRARIES}")
-endif()
 
-find_package(OpenSSL REQUIRED)
-
-
+endif()  
+  
+message(STATUS "OpenSSL include dir: ${OPENSSL_INCLUDE_DIR}")
+message(STATUS "OpenSSL libraries: ${OPENSSL_LIBRARIES}")
 
 add_executable(bayan 
 	main.cpp	
@@ -36,9 +35,11 @@ add_executable(bayan
 	process.h
 	process.cpp
 	settings.h
+	block_hash.h
+	block_hash.cpp
 	 )
 
-
+target_include_directories(bayan PRIVATE ${Boost_INCLUDE_DIRS})
 
 set (ALL_SOURCES bayan)
 
@@ -50,7 +51,7 @@ set_target_properties(${ALL_SOURCES} PROPERTIES
 foreach(s ${ALL_SOURCES})
 	if (MSVC)
 		target_compile_options(${s} PRIVATE
-			/W4
+			/W3
 		)
 		
 	else ()

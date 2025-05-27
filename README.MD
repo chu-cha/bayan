@@ -17,6 +17,7 @@ A utility for finding duplicate files with flexible scan configuration options. 
 | `-s`, `--min_size` <bytes> | Minimum file size to process (default: 1 byte) |
 | `-b`, `--block_size` <bytes> | File read block size (default: 4096 bytes) |
 | `-a`, `--hash_algo` <algorithm> | Hashing algorithm (available: `crc32`, `md5`, `sha1`) |
+| `-p`, `--patterns`, <string> | File patterns to compare (\*.txt, \*.jpg etc)|
 
 ## Usage Examples
 
