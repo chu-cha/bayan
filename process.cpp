@@ -2,6 +2,7 @@
 #include <openssl/sha.h>
 #include <sstream>
 #include <cstring>
+#include <algorithm>
 
 #include "process.h"
 
