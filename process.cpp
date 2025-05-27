@@ -1,6 +1,7 @@
 #include <memory>
 #include <openssl/sha.h>
 #include <sstream>
+#include <cstring>
 
 #include "process.h"
 
@@ -29,37 +30,51 @@ std::string FileReader::readNextBlock(unsigned long long block_size) const {
         memset(buffer.data() + bytesRead, 0, block_size - bytesRead);
     }
 
-   // return computeBlockHash(buffer.data(), bytesRead);  //TODO
-    return std::string(buffer.begin(), buffer.end());  //TODO
+    return computeBlockHash(buffer.data(), bytesRead);  //TODO
+    //return std::string(buffer.begin(), buffer.end());  //TODO
 }
 
 void CompareFiles::collectFiles(){
     for (const auto& d: settings.included_dirs)
-        collectFiles(d, settings.excluded_dirs, settings.deep_search);
+        collectFiles(d, settings.excluded_dirs, settings.deep_search, settings.min_size);
 }
 
 
 void CompareFiles::collectFiles(const fs::path& directory,
     const std::vector<fs::path>& excluded_dirs,
-    bool recursive)
+    bool recursive,
+    uintmax_t min_file_size)
 {
     try {
         for (const auto& entry : fs::directory_iterator(directory)) {
             // dismiss excluded directories
             if (entry.is_directory()) {
-                if (std::find(excluded_dirs.begin(), excluded_dirs.end(),
-                    entry.path()) != excluded_dirs.end()) {
-                    //std::cout << "[SKIPPED] " << entry.path() << "\n";
+
+                if (std::find_if(excluded_dirs.begin(), excluded_dirs.end(),
+                    [&entry](const fs::path& excluded) {
+                        return excluded == entry.path();
+                    }) != excluded_dirs.end()) {
+                   // std::cout << "[SKIPPED] " << entry.path() << "\n";
                     continue;
                 }
 
                 if (recursive)
                     // recursive pass
-                    collectFiles(entry.path(), excluded_dirs, recursive);
+                    collectFiles(entry.path(), excluded_dirs, recursive, min_file_size);
             }
             else if (entry.is_regular_file()) {
                 //std::cout << "[FILE] " << entry.path() << "\n";
-                file_readers.push_back(entry.path());
+                try {
+                    const auto file_size = entry.file_size();
+                    if (file_size >= min_file_size) {
+                        file_readers.push_back(entry.path());
+                    }
+                    // else файл слишком мал, пропускаем
+                }
+                catch (const fs::filesystem_error& size_err) {
+                    std::cerr << "Error getting size for " << entry.path()
+                        << ": " << size_err.what() << "\n";
+                }
             }
         }
     }
@@ -80,8 +95,6 @@ void CompareFiles::groupFilesByBlocks() {
 
     do {
         allFilesProcessed = true;
-
-        size_t reader_id = 0;
 
         for (int reader_id = 0; reader_id < file_readers.size(); reader_id++) {
 

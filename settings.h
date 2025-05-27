@@ -10,9 +10,9 @@ struct Settings {
     std::vector<fs::path> included_dirs;
     std::vector<fs::path> excluded_dirs;
     bool deep_search = false;
-    unsigned long long min_size = 1;
+    uintmax_t min_size = 1;
     //std::string mask; //TODO
-    unsigned long long block_size = 1024;
+    uintmax_t block_size = 1024;
 
     enum class hashing_algorithms {
         crc32,

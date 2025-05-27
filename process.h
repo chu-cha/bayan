@@ -55,7 +55,8 @@ private:
 
     void collectFiles(const fs::path& directory,
         const std::vector<fs::path>& excluded_dirs,
-        bool recursive = false);
+        bool recursive = false,
+        uintmax_t min_file_size = 1);
 
     std::vector<std::vector<fs::path>> collectGroups(TrieNode* node);
 
