@@ -1,12 +1,25 @@
-#include <boost/filesystem.hpp>
-#include <boost/program_options.hpp>
+#include <iostream>
+#include <string>
+#include <vector>
 
-namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+#include <filesystem>
+
+#include "parse_command_line.h"
+#include "process.h"
+
+
+
+
 
 int main(int argc, char* argv[]) {
 
-    
+    Settings settings;
+    bool parse_res = parse_command_line(argc, argv, settings);
+    if (parse_res != 0)
+        return parse_res;
+
+    CompareFiles comparator(settings);
+    comparator.groupFilesByBlocks();
 
     return 0;
 }

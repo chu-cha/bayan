@@ -3,18 +3,39 @@ cmake_minimum_required(VERSION 3.5)
 
 project(bayan VERSION 0.1.1) 
 if(WIN32)
-    set(BOOST_ROOT "C:\\Users\\Tatiana\\vcpkg_\\installed\\x64-windows")
-    set(Boost_NO_SYSTEM_PATHS ON)  
-    
-    set(Boost_ARCHITECTURE "-x64")  
+    	set(BOOST_ROOT "C:\\Users\\Tatiana\\vcpkg\\installed\\x64-windows")
+	# set(Boost_DEBUG ON)
+	set(Boost_NO_SYSTEM_PATHS ON)
+
+	set(OPENSSL_ROOT_DIR "C:\\Users\\Tatiana\\vcpkg\\packages\\openssl_x64-windows-static")
+	# set(Boost_USE_STATIC_LIBS ON)
+
 
 endif()
 
 find_package(Boost REQUIRED COMPONENTS program_options )
 
+if(Boost_FOUND)
+    message(STATUS "Boost found: ${Boost_VERSION}")
+    message(STATUS "Include dirs: ${Boost_INCLUDE_DIRS}")
+    message(STATUS "Library dirs: ${Boost_LIBRARY_DIRS}")
+else()
+    message(FATAL_ERROR "Boost NOT found!")
+    message(STATUS "OpenSSL include dir: ${OPENSSL_INCLUDE_DIR}")
+    message(STATUS "OpenSSL libraries: ${OPENSSL_LIBRARIES}")
+endif()
+
+find_package(OpenSSL REQUIRED)
+
+
 
 add_executable(bayan 
-	main.cpp
+	main.cpp	
+	parse_command_line.h
+	parse_command_line.cpp
+	process.h
+	process.cpp
+	settings.h
 	 )
 
 
@@ -39,10 +60,13 @@ foreach(s ${ALL_SOURCES})
 	endif()
 endforeach()
 
-target_link_libraries(bayan
-    PRIVATE
-        Boost::program_options
-)
+target_link_libraries(bayan  Boost::program_options)
+target_link_libraries(bayan  OpenSSL::SSL OpenSSL::Crypto)
+
+if(WIN32)
+    target_link_libraries(bayan ws2_32)
+    target_link_libraries(bayan Crypt32)
+endif()
 
 install(TARGETS bayan RUNTIME DESTINATION bin)
 
