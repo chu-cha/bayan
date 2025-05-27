@@ -1,60 +1,67 @@
 # File Duplicates Finder (Bayan)
 
-## Описание
+## Description
 
-Утилита для поиска дубликатов файлов с возможностью гибкой настройки параметров сканирования. Поддерживает различные алгоритмы хеширования и фильтрацию файлов.
+A utility for finding duplicate files with flexible scan configuration options. Supports various hashing algorithms and file filtering.
 
-## Параметры командной строки
+## Command Line Parameters
 
-### Основные параметры
+### Basic Parameters
 
-| Параметр            | Описание |
-|---------------------|----------|
-| `-h`, `--help`      | Показать справочное сообщение и выйти |
-| `-d`, `--dir` <пути> | Директории для сканирования (можно указать несколько через пробел) |
-| `-x`, `--exdir` <пути> | Директории для исключения из сканирования (можно указать несколько через пробел) |
-| `-l`, `--level`     | Режим глубокого сканирования (с рекурсивным обходом поддиректорий) |
-| `-s`, `--min_size` <байты> | Минимальный размер файла для обработки (по умолчанию: 1 байт) |
-| `-b`, `--block_size` <байты> | Размер блока для чтения файлов (по умолчанию: 4096 байт) |
-| `-a`, `--hash_algo` <алгоритм> | Алгоритм хеширования (доступные: `crc32`, `md5`, `sha1`) |
+| Parameter         | Description |
+|-------------------|-------------|
+| `-h`, `--help`    | Show help message and exit |
+| `-d`, `--dir` <paths> | Directories to scan (multiple paths can be specified separated by spaces) |
+| `-x`, `--exdir` <paths> | Directories to exclude from scanning (multiple paths can be specified separated by spaces) |
+| `-l`, `--level`   | Deep scan mode (with recursive subdirectory traversal) |
+| `-s`, `--min_size` <bytes> | Minimum file size to process (default: 1 byte) |
+| `-b`, `--block_size` <bytes> | File read block size (default: 4096 bytes) |
+| `-a`, `--hash_algo` <algorithm> | Hashing algorithm (available: `crc32`, `md5`, `sha1`) |
 
-## Примеры использования
+## Usage Examples
 
-1. Базовое сканирование:
+1. Basic scan:
    ```bash
    ./bayan -d /path/to/directory
    ```
 
-2. Сканирование с исключением директорий:
-   ```bash
-   ./bayan -d /path1 /path2 -x /path1/temp /path2/cache
-   ```
-
-3. Глубокое сканирование с фильтрацией по размеру:
-   ```bash
-   ./bayan -d /data -l -s 1024
-   ```
-
-4. Сканирование с пользовательскими настройками:
-   ```bash
-   ./bayan -d /storage -x /storage/tmp -l -b 8192 -a md5
-   ```
-
-## Формат вывода
-
-Программа выводит группы дубликатов файлов в формате:
+2. Scan with directory exclusions:
+```bash
+./bayan -d /path1 /path2 -x /path1/temp /path2/cache
 ```
-Группа дубликатов:
-  /путь/к/файлу1
-  /путь/к/файлу2
+
+3. Deep scan with size filtering:
+```bash
+./bayan -d /data -l -s 1024
+```
+4. Scan with custom settings:
+```bash
+./bayan -d /storage -x /storage/tmp -l -b 8192 -a md5
+```
+
+5. Output Format
+The program outputs duplicate file groups in the following format:
+```
+Duplicate group:
+  /path/to/file1
+  /path/to/file2
   ...
-Размер: X байт
-Хеш: XXXXXXXX
+Size: X bytes
+Hash: XXXXXXXX
 ```
 
-## Примечания
+## Notes
 
-1. Все пути должны быть абсолютными или относительными к текущей рабочей директории
-2. При отсутствии параметров выводится справочное сообщение
-3. Для корректной работы требуются права на чтение сканируемых директорий
-4. Время работы зависит от количества и размера файлов, а также выбранного алгоритма хеширования
+All paths must be absolute or relative to the current working directory
+
+1. Shows help message when no parameters are specified
+
+2. Requires read permissions for scanned directories
+
+3. Execution time depends on:
+
+* Number and size of files
+
+* Selected hashing algorithm
+
+* Scan depth
